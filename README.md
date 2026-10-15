@@ -30,6 +30,22 @@ machine.
 
 The template file shows each layout, plus a code slide and a table slide.
 
+## Text sizes
+
+Sizes are for the 1280×720 slide. They are sized to be read from the back of a
+classroom; keep to them so decks match.
+
+- Slide titles: 50px (cover 60, section 58, end 64)
+- Subtitles: 34–38px
+- Body text and bullets: 32–36px, line height 1.4
+- Tables: 28–30px (theme default 28)
+- Code: 20–28px, 24 by default; size the panel with `code_h()` so every line fits
+- Captions and labels: 22–28px
+- Footer: 12–16px (unchanged)
+
+`tools/discs.py` uses these as its defaults. Run `tools/check.py` after any change:
+it fails a slide if text does not fit its box or a code block is clipped.
+
 ## Build decks from code
 
 `tools/discs.py` has the theme, fonts and layouts as Python helpers. A deck is
