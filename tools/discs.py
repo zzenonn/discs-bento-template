@@ -1,5 +1,5 @@
 """DISCS Bento helpers: theme, fonts, layouts and element builders."""
-import base64, json, os, re
+import base64, json, math, os, re
 
 W, H = 1280, 720
 BLUE = "#00b0f0"
@@ -47,7 +47,7 @@ THEME = {
                     "f": "#6f42c1", "p": "#24292e", "a": "#22863a", "d": "#b31d28"},
     "table": {"headerBg": BLUE, "headerColor": "#FFFFFF", "zebra": "rgba(0,176,240,0.06)",
               "borderColor": "rgba(64,64,64,0.18)", "borderWidth": 1, "cellPadX": 14,
-              "cellPadY": 8, "fontSize": 20, "color": INK, "radius": 0},
+              "cellPadY": 10, "fontSize": 28, "color": INK, "radius": 0},
 }
 
 
@@ -57,7 +57,7 @@ def base(eid, typ, x, y, w, h, **kw):
     return e
 
 
-def text(eid, html, x, y, w, h, size=24, family=BODY, weight=400, color=INK,
+def text(eid, html, x, y, w, h, size=32, family=BODY, weight=400, color=INK,
          align="left", valign="top", lh=1.35, role=None, **kw):
     e = base(eid, "text", x, y, w, h, html=html, fontSize=size, fontFamily=family,
              fontWeight=weight, color=color, align=align, valign=valign, lineHeight=lh, **kw)
@@ -76,14 +76,27 @@ def ellipse(eid, x, y, w, h, fill="#FFFFFF", stroke=BLUE, sw=3, **kw):
                 strokeWidth=sw, radius=0, **kw)
 
 
-def line(eid, a, b, color=INK, sw=3, style="solid", **kw):
-    """Connector between two element ids."""
-    return base(eid, "shape", 0, 0, 10, 10, shape="line", fill=color, stroke="none",
-                strokeWidth=sw, radius=0, strokeStyle=style,
-                **{"from": {"el": a, "side": "auto"}, "to": {"el": b, "side": "auto"}}, **kw)
+def line(eid, p1, p2, color=INK, sw=3, style="solid", **kw):
+    """Straight line from point p1 to point p2 (x, y in slide pixels).
+
+    Bento draws a line across the middle of its box, so the box is centred on the
+    midpoint, as long as the segment, and rotated to its angle. (Connectors bound
+    with from/to are not routed in the presenter, so geometry is set directly.)
+    """
+    (x1, y1), (x2, y2) = p1, p2
+    L = math.hypot(x2 - x1, y2 - y1); h = max(10, sw * 3)
+    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+    return base(eid, "shape", round(mx - L / 2), round(my - h / 2), round(L), h,
+                shape="line", fill=color, stroke="none", strokeWidth=sw, radius=0,
+                strokeStyle=style, **kw) | {"rotation": round(math.degrees(math.atan2(y2 - y1, x2 - x1)), 2)}
 
 
-def code(eid, content, x, y, w, h, grammar="sh", size=20, lh=1.5, panel=True):
+def code_h(content, size=24, lh=1.5):
+    """Panel height that fits every line of content at this size."""
+    return int((content.count("\n") + 1) * size * lh) + 28 + 8
+
+
+def code(eid, content, x, y, w, h, grammar="sh", size=24, lh=1.5, panel=True):
     els = []
     if panel:
         els.append(rect(eid + "-panel", x, y, w, h, fill=PANEL, radius=8))
@@ -93,7 +106,7 @@ def code(eid, content, x, y, w, h, grammar="sh", size=20, lh=1.5, panel=True):
     return els
 
 
-def table(eid, rows, x, y, w, h, cols=None, size=20):
+def table(eid, rows, x, y, w, h, cols=None, size=28):
     st = dict(THEME["table"]); st["fontSize"] = size
     return base(eid, "table", x, y, w, h, header=True,
                 columns=[{"w": c} for c in (cols or [1] * len(rows[0]))],
@@ -132,12 +145,12 @@ def slide_cover(sid, title, subtitle, author="", date="", subject="DISCS",
         rect("cv-bar", 0, 170, W, 120, fill=BLUE),
         text("cv-title", title, MX, 170, CW, 120, size=60, family=HEAD, weight=700,
              color="#FFFFFF", align="center", valign="middle", lh=1.1, role="title"),
-        text("cv-sub", subtitle, MX, 312, CW, 44, size=30, align="center", role="subtitle"),
-        text("cv-author", author, MX, 392, CW, 32, size=22, align="center", role="body"),
-        text("cv-date", date, MX, 426, CW, 30, size=20, color=GREY, align="center"),
-        text("cv-subject", subject, MX, 556, CW, 62, size=52, family=HEAD, weight=700,
+        text("cv-sub", subtitle, MX, 306, CW, 56, size=38, align="center", role="subtitle"),
+        text("cv-author", author, MX, 378, CW, 40, size=28, align="center", role="body"),
+        text("cv-date", date, MX, 420, CW, 36, size=26, color=GREY, align="center"),
+        text("cv-subject", subject, MX, 540, CW, 62, size=52, family=HEAD, weight=700,
              color=BLUE, align="center", lh=1.1, role="kicker"),
-        text("cv-inst", institution, MX, 620, CW, 30, size=20, align="center"),
+        text("cv-inst", institution, MX, 604, CW, 36, size=26, align="center"),
     ]
     return {"id": sid, "background": "#FFFFFF", "transition": "fade", "unnumbered": True,
             "notes": notes, "elements": els}
@@ -148,7 +161,7 @@ def slide_section(sid, title, subtitle="", notes=""):
            text("sec-title", title, MX, 290, CW, 112, size=58, family=HEAD, weight=700,
                 color="#FFFFFF", align="center", valign="middle", lh=1.1, role="title")]
     if subtitle:
-        els.append(text("sec-sub", subtitle, MX, 424, CW, 44, size=30, align="center",
+        els.append(text("sec-sub", subtitle, MX, 420, CW, 56, size=38, align="center",
                         role="subtitle"))
     return {"id": sid, "background": "#FFFFFF", "transition": "morph", "notes": notes,
             "elements": els}
@@ -159,7 +172,7 @@ def slide_default(sid, title, body=None, notes="", extra=(), transition="morph")
                 lh=1.1, role="title")]
     if body is not None:
         html, y, h, size = body
-        els.append(text("df-body", html, MX, y, CW, h, size=size, lh=1.5, role="body"))
+        els.append(text("df-body", html, MX, y, CW, h, size=size, lh=1.4, role="body"))
     els += list(extra)
     els += footer()
     return {"id": sid, "background": "#FFFFFF", "transition": transition, "notes": notes,
@@ -171,7 +184,7 @@ def slide_end(sid, title="Thank You", subtitle="", notes=""):
            text("end-title", title, MX, 290, CW, 124, size=64, family=HEAD, weight=700,
                 color="#FFFFFF", align="center", valign="middle", lh=1.1, role="title")]
     if subtitle:
-        els.append(text("end-sub", subtitle, MX, 436, CW, 40, size=26, align="center",
+        els.append(text("end-sub", subtitle, MX, 432, CW, 48, size=34, align="center",
                         role="subtitle"))
     return {"id": sid, "background": "#FFFFFF", "transition": "fade", "unnumbered": True,
             "notes": notes, "elements": els}

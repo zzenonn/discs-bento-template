@@ -1,4 +1,9 @@
-"""Bento deck check: validate(), per-slide stage screenshots, DOM overflow/overlap report."""
+"""Bento deck check: validate(), per-slide screenshots, and overflow checks.
+
+Two overflow checks run on every slide: bento.measure() (does the text fit its box
+at its font size) and the rendered page (did the browser draw text past its box, or
+clip a code block). Both must be clean.
+"""
 import json, os, sys
 from playwright.sync_api import sync_playwright
 
@@ -21,7 +26,12 @@ JS_REPORT = r"""(()=>{
    const ah=a.valign==='middle'?a.h:Math.min(a.h,m1.height), bh=b.valign==='middle'?b.h:Math.min(b.h,m2.height);
    const ay=a.valign==='middle'?a.y:a.y, by=b.y;
    if(a.x<b.x+b.w&&b.x<a.x+a.w&&ay<by+bh&&by<ay+ah) issues.push(`text overlap ${a.id} / ${b.id}`);}
- return {sid,issues};})()"""
+ // what the browser actually drew: text running past its box, code clipped by its frame
+ for(const el of st.querySelectorAll('[data-el-id]')){ const id=el.dataset.elId, b=el.getBoundingClientRect();
+   const rg=document.createRange(); rg.selectNodeContents(el); const r=rg.getBoundingClientRect();
+   if(r.height>0&&(r.bottom>b.bottom+2||r.right>b.right+2)) issues.push(`drawn past box ${id}: ${Math.round((r.bottom-b.bottom)/sc)}px down, ${Math.round((r.right-b.right)/sc)}px right`);
+   for(const c of [el,...el.querySelectorAll('*')]){ if(c.clientHeight>0&&c.scrollHeight>c.clientHeight+2&&getComputedStyle(c).overflow!=='visible'){issues.push(`clipped ${id}: ${c.scrollHeight}>${c.clientHeight}`);break;} } }
+ return {sid,issues:[...new Set(issues)]};})()"""
 
 with sync_playwright() as p:
     b = p.chromium.launch()

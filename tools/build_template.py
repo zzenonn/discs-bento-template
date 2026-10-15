@@ -13,19 +13,19 @@ S = [
                   (bullets(["Clean and minimalist design",
                             "Blue (#00b0f0) and white colour scheme",
                             "Roboto for titles, Roboto Condensed for body text",
-                            "Footer: page number, DISCS logo and department name"]), 140, 300, 28),
+                            "Footer: page number, DISCS logo and department name"]), 140, 300, 36),
                   notes="Default layout: title, content, footer. The footer elements keep the same ids on every slide, so they stay still while the content changes."),
     slide_default("code", "Code Example", (
-        "Code uses Fira Code on a light grey panel, coloured like GitHub Light:", 130, 40, 24),
+        "Code uses Fira Code on a light grey panel, coloured like GitHub Light:", 130, 50, 32),
         extra=code("code-py", 'def hello_world():\n    print("Hello from DISCS!")\n    return True',
-                   MX, 190, 560, 150, grammar="py", size=22)
+                   MX, 196, 760, 160, grammar="py", size=26)
         + code("code-js", 'const greet = () => {\n  console.log("Hello from DISCS!");\n  return true;\n};',
-               MX, 370, 560, 180, grammar="js", size=22),
+               MX, 376, 760, 200, grammar="js", size=26),
         notes="Code elements use the deck code palette. Put a rect panel behind each one."),
     slide_default("table", "Table Example", None, extra=[
         table("tbl", [["Layout", "Use it for"], ["Cover", "the first slide"],
                       ["Section", "a divider between parts"], ["Default", "every content slide"],
-                      ["End", "the last slide"]], MX, 140, 760, 260, cols=[1, 2], size=24)],
+                      ["End", "the last slide"]], MX, 140, 860, 320, cols=[1, 2], size=30)],
         notes="Tables take the theme's table style: blue header, light zebra rows."),
     slide_end("end", "Thank You", "Questions?", notes="End layout: a centred blue bar."),
 ]
